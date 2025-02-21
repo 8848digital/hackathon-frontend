@@ -2,6 +2,8 @@
 @tailwind components;
 @tailwind utilities;
 
+@import url('../styles/globals/base.css');
+
 :root {
   --foreground-rgb: 0, 0, 0;
   --background-start-rgb: 214, 219, 220;
@@ -38,12 +40,6 @@ body {
   height: 100vh;
 }
 
-.left {
-  width: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
 
 .title {
   font-size: 3rem;
@@ -51,10 +47,7 @@ body {
   text-shadow: 0 0 10px #00ffcc, 0 0 20px #00ffcc;
 }
 
-.right {
-  width: 50%;
-  height: 100vh;
-}
+
 
 .binary-bg {
   position: absolute;
