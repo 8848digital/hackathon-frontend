@@ -9,11 +9,18 @@ import { AiOutlineUser } from 'react-icons/ai';
 import { CiLogin } from 'react-icons/ci';
 import { FaBars, FaTimes } from 'react-icons/fa';
 import logo from '../public/assets/8848_Logo.svg';
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover"
+import { useAuth } from '@/contexts/AuthContext';
 
 const Navbar = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isRegisterOpen, setIsRegisterOpen] = useState(false);
+  const { isAuthenticated, logout, currentUser } = useAuth()
 
   return (
     <div className="max-w-6xl mx-auto px-4 bg-black shadow-lg relative">
@@ -21,7 +28,7 @@ const Navbar = () => {
         <Image src={logo} width={64} height={64} alt="logo" />
 
         {/* Desktop Menu */}
-        <div className="hidden md:flex items-center space-x-4">
+        {!isAuthenticated && <> <div className="hidden md:flex items-center space-x-4">
           <Button variant="ghost" className="text-white hover:bg-[#dcf7f1]" onClick={() => setIsModalOpen(true)}>
             <CiLogin className="mr-2" />
             Login
@@ -32,12 +39,20 @@ const Navbar = () => {
           </Button>
         </div>
 
-        {/* Mobile menu button */}
-        <div className="md:hidden flex items-center">
-          <button onClick={() => setIsOpen(!isOpen)} className="p-2 rounded-md text-white hover:bg-gray-800 transition">
-            {isOpen ? <FaTimes className="h-6 w-6" /> : <FaBars className="h-6 w-6" />}
-          </button>
-        </div>
+          {/* Mobile menu button */}
+          <div className="md:hidden flex items-center">
+            <button onClick={() => setIsOpen(!isOpen)} className="p-2 rounded-md text-white hover:bg-gray-800 transition">
+              {isOpen ? <FaTimes className="h-6 w-6" /> : <FaBars className="h-6 w-6" />}
+            </button>
+          </div> </>}
+        {isAuthenticated && <Popover>
+          <PopoverTrigger asChild><Button className=''>{currentUser?.split('')[0]}</Button></PopoverTrigger>
+          <PopoverContent className="w-80" side='bottom' align='end'>
+              <p>Hi, {currentUser}</p>
+              
+              <Button onClick={logout} className='w-full'>  Logout</Button>
+          </PopoverContent>
+        </Popover>}
       </div>
 
       {isOpen && (
@@ -48,7 +63,7 @@ const Navbar = () => {
               className="w-full text-left text-white hover:bg-gray-800"
               onClick={() => {
                 setIsModalOpen(true);
-                setIsOpen(false); // Close mobile menu
+                setIsOpen(false); 
               }}
             >
               Login
@@ -58,7 +73,7 @@ const Navbar = () => {
               className="w-full bg-[#10635a] hover:bg-[#0d5048]"
               onClick={() => {
                 setIsRegisterOpen(true);
-                setIsOpen(false); // Close mobile menu
+                setIsOpen(false); 
               }}
             >
               Register
@@ -68,8 +83,12 @@ const Navbar = () => {
       )}
 
       {/* Modals */}
-      <LoginDialog isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} setIsRegisterOpen={setIsRegisterOpen} />
-      <RegisterDialog isOpen={isRegisterOpen} onClose={() => setIsRegisterOpen(false)} setIsModalOpen={setIsModalOpen} />
+      {
+        isAuthenticated ? <></> : <>
+          <LoginDialog isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} setIsRegisterOpen={setIsRegisterOpen} />
+          <RegisterDialog isOpen={isRegisterOpen} onClose={() => setIsRegisterOpen(false)} setIsModalOpen={setIsModalOpen} />
+        </>
+      }
     </div>
   );
 };
@@ -86,22 +105,12 @@ const LoginDialog: React.FC<LoginDialogProps> = ({ isOpen, onClose, setIsRegiste
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
+  const { login } = useAuth()
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
-    
-    try {
-      const response = await axios.post('https://hackathon.8848digitalerp.com/api/method/hackathon.API.api_login.login', { usr: email, pwd: password });
-      if (response.status === 200) {
-        alert('Login Successful');
-        onClose();
-      } else {
-        alert(response.data.message || 'Login failed');
-      }
-    } catch (error) {
-      console.error(error)
-    }
+    await login({ usr: email, pwd: password }).then(() => onClose())
     setLoading(false);
   };
 
@@ -166,15 +175,13 @@ const RegisterDialog: React.FC<RegisterDialogProps> = ({ isOpen, onClose, setIsM
       });
 
       if (response.status === 200) {
-        alert('Register Successful');
         onClose();
       } else {
-        alert(response.data.message || 'Registration failed');
+       console.error(response);
       }
     } catch (error) {
       console.error(error)
     }
-
     setLoading(false);
   };
 
@@ -188,25 +195,25 @@ const RegisterDialog: React.FC<RegisterDialogProps> = ({ isOpen, onClose, setIsM
           </div>
         </DialogHeader>
         <form onSubmit={handleRegister} className="space-y-4">
-        <div className="flex flex-col gap-y-4 sm:flex-row sm:space-x-2 ">
-          <Input
-            type="text"
-            name="name"
-            placeholder="Name"
-            className="w-full p-3 border rounded-md"
-            value={formData.name}
-            onChange={handleChange}
-            required
-          />
-          <Input
-            type="text"
-            name="role"
-            placeholder="Role"
-            className="w-full p-3 border rounded-md"
-            value={formData.role}
-            onChange={handleChange}
-            required
-          />
+          <div className="flex flex-col gap-y-4 sm:flex-row sm:space-x-2 ">
+            <Input
+              type="text"
+              name="name"
+              placeholder="Name"
+              className="w-full p-3 border rounded-md"
+              value={formData.name}
+              onChange={handleChange}
+              required
+            />
+            <Input
+              type="text"
+              name="role"
+              placeholder="Role"
+              className="w-full p-3 border rounded-md"
+              value={formData.role}
+              onChange={handleChange}
+              // required
+            />
           </div>
           <Input
             type="email"
