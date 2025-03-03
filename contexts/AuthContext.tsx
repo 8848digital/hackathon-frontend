@@ -1,11 +1,30 @@
 'use client';
 
+import { axiosInstance } from '@/lib/api/axios';
+import { getCookie, removeCookie, setCookie } from '@/utils/cookies';
 import React, { createContext, useContext, useState, useEffect, useMemo, useCallback } from 'react';
-import axios from 'axios';
+
+interface LoginCredentials {
+  usr: string;
+  pwd: string;
+}
+
+interface LoginResponse {
+  message: {
+    success_key: number;
+    error?: string;
+    sid?: string;
+    api_key?: string;
+    api_secret?: {
+      token: string;
+    };
+  };
+  full_name: string;
+}
 
 interface AuthContextType {
   isAuthenticated: boolean;
-  login: (credentials: { usr: string; pwd: string }) => Promise<void>;
+  login: (credentials: LoginCredentials) => Promise<void>;
   logout: () => void;
   currentUser: string;
 }
@@ -13,63 +32,66 @@ interface AuthContextType {
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-    const [isAuthenticated, setIsAuthenticated] = useState(false);
-    const [currentUser, setCurrentUser] = useState('');
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [currentUser, setCurrentUser] = useState('');
   
-    useEffect(() => {
-      const userCookie = document.cookie.split(';').find(c => c.trim().startsWith('full_name='));
-      if (userCookie) {
-        const userName = userCookie.split('=')[1];
-        setIsAuthenticated(!!userName && userName !== "Guest");
-        setCurrentUser(userName);
+  useEffect(() => {
+    const userName = getCookie('full_name');
+    const isValid = !!userName && userName !== "Guest";
+    
+    setIsAuthenticated(isValid);
+    setCurrentUser(userName || '');
+  }, []);
+  
+  // Login function
+  const login = async ({ usr, pwd }: LoginCredentials): Promise<void> => {
+    try {
+      const response = await axiosInstance.post<LoginResponse>(
+        '/api/method/hackathon.API.api_login.login',
+        { usr, pwd }
+      );
+      
+      const { message, full_name } = response.data;
+      
+      if (message.success_key === 0) {
+        throw new Error(message.error || 'Login failed');
       }
-    }, []);
-  
-    const login = async ({ usr, pwd }: { usr: string; pwd: string }) => {
-      return new Promise<void>(async (resolve, reject) => {
-        try {
-          const response = await axios.post(
-            'https://hackathon.8848digitalerp.com/api/method/hackathon.API.api_login.login',
-            { usr, pwd }
-          );
-    
-          if (response.data.message.success_key === 0) {
-            console.error("Login failed:", response.data.message.error);
-            return reject(new Error(response.data.message.error || 'Login failed'));
-          }
-    
-          if (response.data.message.success_key === 1) {
-            document.cookie = `sid=${response.data.message.sid};`;
-            document.cookie = `token=${response.data.message.api_secret.token};`;
-            document.cookie = `api_key=${response.data.message.api_key};`;
-            document.cookie = `full_name=${response.data.full_name};`;
-    
-            setIsAuthenticated(true);
-            setCurrentUser(response.data.full_name);
-    
-            return resolve(); 
-          }
-        } catch (error) {
-          console.error("Login error:", error);
-          return reject(error);
-        }
-      });
-    };
-    
-  
-    const logout = useCallback(() => {
-      document.cookie = "sid='';";
-      document.cookie = "token='';";
-      document.cookie = "api_key='';";
-      document.cookie = "full_name=Guest;";
-      setIsAuthenticated(false);
-    }, []);
-  
-    const value = useMemo(() => ({ isAuthenticated, login, logout, currentUser }), [isAuthenticated, login, logout, currentUser]);
-  
-    return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
+      
+      if (message.success_key === 1 && message.sid && message.api_key && message.api_secret?.token) {
+        setCookie('sid', message.sid);
+        setCookie('token', message.api_secret.token);
+        setCookie('api_key', message.api_key);
+        setCookie('full_name', full_name);
+        
+        setIsAuthenticated(true);
+        setCurrentUser(full_name);
+      }
+    } catch (error) {
+      console.error("Login error:", error);
+      throw error;
+    }
   };
   
+  // Logout function
+  const logout = useCallback(() => {
+    removeCookie('sid');
+    removeCookie('token');
+    removeCookie('api_key');
+    setCookie('full_name', 'Guest');
+    
+    setIsAuthenticated(false);
+    setCurrentUser('');
+  }, []);
+  
+  // Memoize context value to prevent unnecessary re-renders
+  const value = useMemo(
+    () => ({ isAuthenticated, login, logout, currentUser }),
+    [isAuthenticated, currentUser, logout]
+  );
+  
+  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
+};
+
 export const useAuth = () => {
   const context = useContext(AuthContext);
   if (!context) {

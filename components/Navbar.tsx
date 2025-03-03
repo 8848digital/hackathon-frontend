@@ -17,14 +17,12 @@ import logo from '../public/assets/8848_Logo.svg';
 
 const Navbar = () => {
   const [isOpen, setIsOpen] = useState(false);
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const [isRegisterOpen, setIsRegisterOpen] = useState(false);
   const { isAuthenticated, logout, currentUser } = useAuth()
   const router = useRouter();
 
   return (
     <div className="fixed top-0 left-0 right-0 z-50 bg-black">
-      <div className="max-w-6xl mx-auto px-4 shadow-lg relative">
+      <div className="max-w-7xl mx-auto px-4 shadow-lg relative">
         <div className="flex justify-between items-center h-16">
           <Image src={logo} width={64} height={64} alt="logo" />
 
