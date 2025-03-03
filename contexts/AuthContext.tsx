@@ -26,27 +26,36 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }, []);
   
     const login = async ({ usr, pwd }: { usr: string; pwd: string }) => {
-      try {
-        const response = await axios.post(
-          'https://hackathon.8848digitalerp.com/api/method/hackathon.API.api_login.login',
-          { usr, pwd }
-        );
-        if (response.data.message.success_key === 0) {
+      return new Promise<void>(async (resolve, reject) => {
+        try {
+          const response = await axios.post(
+            'https://hackathon.8848digitalerp.com/api/method/hackathon.API.api_login.login',
+            { usr, pwd }
+          );
+    
+          if (response.data.message.success_key === 0) {
             console.error("Login failed:", response.data.message.error);
-            throw new Error(response.data.message.error || 'Login failed');
+            return reject(new Error(response.data.message.error || 'Login failed'));
           }
-        if (response.data.message.success_key === 1) {
-          document.cookie = `sid=${response.data.message.sid};`;
-          document.cookie = `token=${response.data.message.api_secret.token};`;
-          document.cookie = `api_key=${response.data.message.api_key};`;
-          document.cookie = `full_name=${response.data.full_name};`;
-          setIsAuthenticated(true);
-          setCurrentUser(response.data.full_name);
+    
+          if (response.data.message.success_key === 1) {
+            document.cookie = `sid=${response.data.message.sid};`;
+            document.cookie = `token=${response.data.message.api_secret.token};`;
+            document.cookie = `api_key=${response.data.message.api_key};`;
+            document.cookie = `full_name=${response.data.full_name};`;
+    
+            setIsAuthenticated(true);
+            setCurrentUser(response.data.full_name);
+    
+            return resolve(); 
+          }
+        } catch (error) {
+          console.error("Login error:", error);
+          return reject(error);
         }
-      } catch (error) {
-        console.error(error);
-      }
+      });
     };
+    
   
     const logout = useCallback(() => {
       document.cookie = "sid='';";
