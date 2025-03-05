@@ -2,8 +2,8 @@
 
 import { Canvas } from "@react-three/fiber"
 import Model from "./Model"
-import { Suspense, useState } from "react"
-import { useProgress, Html, ScrollControls, useScroll, Stars, Scroll } from "@react-three/drei"
+import { Suspense } from "react"
+import { useProgress, Html, ScrollControls, Stars } from "@react-three/drei"
 
 function Loader() {
     const { progress } = useProgress()
