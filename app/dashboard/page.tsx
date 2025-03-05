@@ -1,9 +1,12 @@
-import React from 'react'
+'use client'
+import dynamic from "next/dynamic"
 
-const Page = () => {
+const Scene = dynamic(() => import("@/components/Scene"), { ssr: false })
+
+export default function DashboardPage() {
   return (
-    <div>page</div>
+    <main className="h-full">
+      <Scene />
+    </main>
   )
 }
-
-export default Page
