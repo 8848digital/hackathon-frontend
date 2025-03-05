@@ -9,7 +9,7 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 
 export default function LoginPage() {
-  const { login } = useAuth(); 
+  const { login } = useAuth();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
@@ -22,12 +22,12 @@ export default function LoginPage() {
     setError("");
     login({ usr: email, pwd: password })
       .then((res) => {
-        router.push('/')
+        router.push('/dashboard')
       })
       .catch((error) => {
         setError(error.message || "Login failed");
       });
-      setLoading(false);
+    setLoading(false);
   };
 
   return (
@@ -53,13 +53,13 @@ export default function LoginPage() {
             className="w-full bg-black text-white hover:bg-gray-900"
             disabled={loading}
           >
-            
+
             {loading ? "Logging in..." : "Log In"}
           </Button>
         </form>
 
         <p className="mt-4 text-center text-gray-500">
-          Don't have an account? <Link href="/register" className="text-blue-500">Register</Link>
+          Don&apos;t have an account? <Link href="/register" className="text-blue-500">Register</Link>
         </p>
       </Card>
     </div>
